@@ -1,0 +1,25 @@
+# Only the code goes to GitHub. Everything else here is huge (champions/ 12 GB of weights, data/
+# 16 GB of episodes), someone else's repository (attune-subnet/, vector-orchestrator/: the GPU box
+# clones its own), or local tooling (.venv/). On the GPU box the same rule keeps everything the
+# pipeline downloads and writes next to vector-train/ out of git: king/, data/, cache/, run*/,
+# exports/, duels/, .venv-train/, .venv-orch/, RoboTwin-Vector/.
+# So a new file at the top level is ignored until it gets its own "!/name" line below.
+/*
+!/.gitignore
+!/.gitattributes
+!/vector-train/
+!/vector_v1.1_architecture.png
+!/vector_v1.1_architecture.svg
+
+# Inside vector-train/: Python leftovers, and weights, data or outputs written there by mistake.
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv*/
+*.safetensors
+*.pt
+*.hdf5
+*.npy
+*.zip
+*.tmp
+selftest-work/

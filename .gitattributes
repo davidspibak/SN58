@@ -1,0 +1,4 @@
+# The scripts run on Linux: keep LF line endings even when a file is saved or committed on Windows
+# (bash fails on a CRLF script with "$'\r': command not found").
+* text=auto eol=lf
+*.png binary

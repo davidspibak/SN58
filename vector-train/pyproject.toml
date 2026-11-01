@@ -1,0 +1,18 @@
+[build-system]
+requires = ["hatchling>=1.25"]
+build-backend = "hatchling.build"
+
+[project]
+name = "vector-train"
+version = "0.1.0"
+description = "Fine-tune vector_v1.1 weights for Robotensor Vector (Bittensor SN58)."
+requires-python = ">=3.10"
+# The model stack is vector-runtime's own pins (install it from the vector-orchestrator checkout
+# first), so training and the validator run the same code.
+dependencies = ["robotensor-vector-runtime[model]", "h5py>=3.10"]
+
+[project.scripts]
+vector-train = "vector_train.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/vector_train"]

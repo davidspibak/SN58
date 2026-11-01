@@ -1,0 +1,269 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="2040" height="1120" viewBox="0 0 2040 1120" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif">
+  <title>vector_v1.1 architecture</title>
+  <style>
+    .h1 { font-size: 30px; font-weight: 700; fill: #111827; }
+    .sub { font-size: 16px; fill: #4b5563; }
+    .lane { font-size: 13px; font-weight: 700; letter-spacing: 0.08em; }
+    .bt { font-size: 17px; font-weight: 700; fill: #111827; }
+    .st { font-size: 13px; font-weight: 700; fill: #111827; }
+    .b { font-size: 13px; fill: #374151; }
+    .s { font-size: 12px; fill: #4b5563; }
+    .m { font-size: 11px; fill: #6b7280; }
+    .c { text-anchor: middle; }
+    .e { text-anchor: end; }
+    .ar { stroke: #4b5563; stroke-width: 1.75; fill: none; marker-end: url(#ah); }
+    .ar-o { stroke: #c2410c; stroke-width: 1.5; fill: none; stroke-dasharray: 5 4; marker-end: url(#aho); }
+    .bar1 { font-size: 12px; font-weight: 700; fill: #ffffff; text-anchor: middle; }
+    .bar2 { font-size: 11.5px; fill: #ffffff; text-anchor: middle; }
+  </style>
+  <defs>
+    <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#4b5563"/>
+    </marker>
+    <marker id="aho" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#c2410c"/>
+    </marker>
+    <clipPath id="barclip"><rect x="40" y="940" width="1960" height="36" rx="6"/></clipPath>
+  </defs>
+
+  <rect width="2040" height="1120" fill="#ffffff"/>
+
+  <!-- Title -->
+  <text x="40" y="58" class="h1">vector_v1.1 — the network every Vector submission fills</text>
+  <text x="40" y="88" class="sub">Demonstration-prompted diffusion policy for two Franka arms · 780,979,360 parameters in 753 float32 tensors · token width 768</text>
+
+  <!-- Lane backgrounds -->
+  <rect x="24" y="112" width="1296" height="362" rx="14" fill="#f5f9ff"/>
+  <rect x="24" y="488" width="1296" height="392" rx="14" fill="#f3fbf7"/>
+  <text x="44" y="138" class="lane" fill="#1d4ed8">PROMPT PATH</text>
+  <text x="44" y="156" class="s">built once per unit, from the demonstration</text>
+  <text x="44" y="518" class="lane" fill="#047857">POLICY PATH</text>
+  <text x="44" y="536" class="s">every prediction · every 12 control steps</text>
+
+  <!-- A1 Demonstration -->
+  <rect x="40" y="170" width="250" height="170" rx="10" fill="#f9fafb" stroke="#6b7280" stroke-width="1.5"/>
+  <text x="56" y="198" class="bt">Demonstration</text>
+  <text x="56" y="222" class="b">one expert run of the task,</text>
+  <text x="56" y="241" class="b">recorded in a different scene</text>
+  <text x="56" y="260" class="b">3 cameras · 240×320 RGB (JPEG)</text>
+  <text x="56" y="279" class="b">both arms' end-effector poses</text>
+  <text x="56" y="298" class="b">up to 1,005 steps; 1 frame in 15</text>
+  <text x="56" y="317" class="b">is kept → P ≤ 67 prompt frames</text>
+
+  <!-- A2 Live observation -->
+  <rect x="40" y="552" width="250" height="140" rx="10" fill="#f9fafb" stroke="#6b7280" stroke-width="1.5"/>
+  <text x="56" y="580" class="bt">Live observation</text>
+  <text x="56" y="604" class="b">the current frame and the</text>
+  <text x="56" y="623" class="b">previous one</text>
+  <text x="56" y="642" class="b">3 cameras · 240×320 RGB (raw)</text>
+  <text x="56" y="661" class="b">both arms' end-effector poses</text>
+
+  <!-- B Frame tokenizer (shared) -->
+  <rect x="340" y="245" width="280" height="455" rx="12" fill="#f5f3ff" stroke="#8b5cf6" stroke-width="1.5"/>
+  <text x="356" y="275" class="bt" fill="#6d28d9">Frame tokenizer</text>
+  <text x="356" y="295" class="s">shared by both paths · same weights</text>
+  <rect x="352" y="310" width="256" height="148" rx="8" fill="#ffffff" stroke="#c4b5fd"/>
+  <text x="366" y="334" class="st">3 × CLIP ViT-B/16</text>
+  <text x="366" y="355" class="b">one per camera:</text>
+  <text x="366" y="374" class="b">head · left wrist · right wrist</text>
+  <text x="366" y="393" class="b">CLS token → 1 token of 768</text>
+  <text x="366" y="414" class="s">resize 224 · crop 95% · CLIP norm</text>
+  <text x="366" y="434" class="s">85.8M each · 257.4M in total</text>
+  <rect x="352" y="470" width="256" height="128" rx="8" fill="#ffffff" stroke="#c4b5fd"/>
+  <text x="366" y="494" class="st">6 pose projections</text>
+  <text x="366" y="515" class="b">Linear → 768, one per key:</text>
+  <text x="366" y="534" class="b">position (3) · 6-D rotation (6)</text>
+  <text x="366" y="553" class="b">gripper (1) — for each arm</text>
+  <text x="366" y="574" class="s">scale &amp; offset stored in weights</text>
+  <text x="405" y="626" class="m c">3 camera</text>
+  <text x="517" y="626" class="m c">6 pose</text>
+  <rect x="370" y="634" width="20" height="20" rx="3" fill="#8b5cf6"/>
+  <rect x="395" y="634" width="20" height="20" rx="3" fill="#8b5cf6"/>
+  <rect x="420" y="634" width="20" height="20" rx="3" fill="#8b5cf6"/>
+  <rect x="445" y="634" width="20" height="20" rx="3" fill="#c4b5fd"/>
+  <rect x="470" y="634" width="20" height="20" rx="3" fill="#c4b5fd"/>
+  <rect x="495" y="634" width="20" height="20" rx="3" fill="#c4b5fd"/>
+  <rect x="520" y="634" width="20" height="20" rx="3" fill="#c4b5fd"/>
+  <rect x="545" y="634" width="20" height="20" rx="3" fill="#c4b5fd"/>
+  <rect x="570" y="634" width="20" height="20" rx="3" fill="#c4b5fd"/>
+  <text x="480" y="680" class="st c">9 tokens × 768 per frame</text>
+
+  <!-- C1 Action projection -->
+  <rect x="670" y="160" width="280" height="100" rx="10" fill="#eff6ff" stroke="#3b82f6" stroke-width="1.5"/>
+  <text x="686" y="186" class="bt">Action projection</text>
+  <text x="686" y="208" class="b">15 actions × 20 numbers = 300</text>
+  <text x="686" y="227" class="b">MLP 300 → 300 → 768 (GELU)</text>
+  <text x="686" y="246" class="b">→ 1 token per frame · 0.3M</text>
+
+  <!-- C2 Prompt pooling -->
+  <rect x="670" y="290" width="280" height="130" rx="10" fill="#eff6ff" stroke="#3b82f6" stroke-width="1.5"/>
+  <text x="686" y="316" class="bt">Prompt pooling</text>
+  <text x="686" y="338" class="b">attention pooling, 1 learned query</text>
+  <text x="686" y="357" class="b">8 heads · MLP × 4 · 7.1M</text>
+  <text x="686" y="376" class="b">per frame: 9 tokens + 1 action</text>
+  <text x="686" y="395" class="b">token → 1 pooled token</text>
+
+  <!-- D1 Prompt memory -->
+  <rect x="1000" y="250" width="290" height="170" rx="10" fill="#eff6ff" stroke="#3b82f6" stroke-width="1.5"/>
+  <text x="1016" y="278" class="bt">Prompt memory</text>
+  <text x="1016" y="300" class="b">+ learned position per frame (≤ 67)</text>
+  <text x="1016" y="319" class="b">4 learned sink tokens in front</text>
+  <rect x="1016" y="334" width="18" height="18" rx="3" fill="#9ca3af"/>
+  <rect x="1038" y="334" width="18" height="18" rx="3" fill="#9ca3af"/>
+  <rect x="1060" y="334" width="18" height="18" rx="3" fill="#9ca3af"/>
+  <rect x="1082" y="334" width="18" height="18" rx="3" fill="#9ca3af"/>
+  <rect x="1104" y="334" width="18" height="18" rx="3" fill="#3b82f6"/>
+  <rect x="1126" y="334" width="18" height="18" rx="3" fill="#3b82f6"/>
+  <rect x="1148" y="334" width="18" height="18" rx="3" fill="#3b82f6"/>
+  <rect x="1170" y="334" width="18" height="18" rx="3" fill="#3b82f6"/>
+  <rect x="1192" y="334" width="18" height="18" rx="3" fill="#3b82f6"/>
+  <rect x="1214" y="334" width="18" height="18" rx="3" fill="#3b82f6"/>
+  <text x="1240" y="349" class="st">…</text>
+  <text x="1058" y="370" class="m c">4 sinks</text>
+  <text x="1168" y="370" class="m c">P pooled frame tokens</text>
+  <text x="1016" y="400" class="st">(4 + P) × 768</text>
+
+  <!-- C3 Live tokens -->
+  <rect x="670" y="575" width="280" height="100" rx="10" fill="#ecfdf5" stroke="#10b981" stroke-width="1.5"/>
+  <text x="686" y="601" class="bt">18 live tokens</text>
+  <text x="686" y="623" class="b">2 frames × 9 tokens × 768</text>
+  <text x="686" y="642" class="b">+ 18 learned history positions</text>
+  <text x="686" y="661" class="s">(added for the decoder only)</text>
+
+  <!-- D2 Decoder -->
+  <rect x="1000" y="540" width="290" height="190" rx="10" fill="#ecfdf5" stroke="#10b981" stroke-width="1.5"/>
+  <text x="1016" y="566" class="bt">Transformer decoder × 6</text>
+  <text x="1016" y="586" class="s">pre-norm · 8 heads · 56.7M</text>
+  <rect x="1014" y="598" width="262" height="32" rx="6" fill="#ffffff" stroke="#a7f3d0"/>
+  <text x="1026" y="619" class="b">self-attention over the 18 tokens</text>
+  <rect x="1014" y="638" width="262" height="32" rx="6" fill="#ffffff" stroke="#93c5fd" stroke-width="1.5"/>
+  <text x="1026" y="659" class="b">cross-attention to prompt memory</text>
+  <rect x="1014" y="678" width="262" height="32" rx="6" fill="#ffffff" stroke="#a7f3d0"/>
+  <text x="1026" y="699" class="b">FFN 768 → 3072 → 768, GELU</text>
+
+  <!-- D3 Condition -->
+  <rect x="1000" y="760" width="290" height="100" rx="10" fill="#ecfdf5" stroke="#10b981" stroke-width="1.5"/>
+  <text x="1016" y="786" class="bt">Condition</text>
+  <text x="1016" y="808" class="b">18 live tokens + 18 decoder outputs</text>
+  <text x="1016" y="827" class="b">flattened: 36 × 768 = 27,648</text>
+  <text x="1016" y="846" class="s">(live tokens without positions)</text>
+
+  <!-- E Diffusion head -->
+  <rect x="1350" y="130" width="440" height="740" rx="14" fill="#fff7ed" stroke="#f97316" stroke-width="1.5"/>
+  <text x="1368" y="160" class="bt" fill="#c2410c">Diffusion head · 1-D conditional U-Net</text>
+  <text x="1368" y="181" class="s">459.4M · 2 ResBlocks per stage · kernel 5 · GroupNorm 8 · Mish</text>
+  <rect x="1370" y="205" width="170" height="36" rx="18" fill="#ffffff" stroke="#f97316"/>
+  <text x="1455" y="228" class="s c">noisy actions · 16 × 20</text>
+  <rect x="1600" y="205" width="170" height="36" rx="18" fill="#ffffff" stroke="#f97316"/>
+  <text x="1685" y="228" class="s c">noise estimate ε · 16 × 20</text>
+  <path d="M1600,223 H1542" class="ar-o"/>
+  <text x="1570" y="214" class="m c" fill="#c2410c">× 16</text>
+
+  <rect x="1370" y="265" width="170" height="52" rx="8" fill="#ffffff" stroke="#fdba74" stroke-width="1.5"/>
+  <text x="1455" y="287" class="st c">Down 1 · 20 → 256</text>
+  <text x="1455" y="306" class="s c">length 16 → 8</text>
+  <rect x="1370" y="342" width="170" height="52" rx="8" fill="#ffffff" stroke="#fdba74" stroke-width="1.5"/>
+  <text x="1455" y="364" class="st c">Down 2 · 256 → 512</text>
+  <text x="1455" y="383" class="s c">length 8 → 4</text>
+  <rect x="1370" y="419" width="170" height="52" rx="8" fill="#ffffff" stroke="#fdba74" stroke-width="1.5"/>
+  <text x="1455" y="441" class="st c">Down 3 · 512 → 1024</text>
+  <text x="1455" y="460" class="s c">length 4</text>
+  <rect x="1470" y="496" width="200" height="52" rx="8" fill="#ffffff" stroke="#fdba74" stroke-width="1.5"/>
+  <text x="1570" y="518" class="st c">Middle · 1024</text>
+  <text x="1570" y="537" class="s c">length 4</text>
+  <rect x="1600" y="419" width="170" height="52" rx="8" fill="#ffffff" stroke="#fdba74" stroke-width="1.5"/>
+  <text x="1685" y="441" class="st c">Up 1 · 2048 → 512</text>
+  <text x="1685" y="460" class="s c">length 4 → 8</text>
+  <rect x="1600" y="342" width="170" height="52" rx="8" fill="#ffffff" stroke="#fdba74" stroke-width="1.5"/>
+  <text x="1685" y="364" class="st c">Up 2 · 1024 → 256</text>
+  <text x="1685" y="383" class="s c">length 8 → 16</text>
+  <rect x="1600" y="265" width="170" height="52" rx="8" fill="#ffffff" stroke="#fdba74" stroke-width="1.5"/>
+  <text x="1685" y="287" class="st c">Final conv · 256 → 20</text>
+  <text x="1685" y="306" class="s c">kernel 5, then 1 × 1</text>
+
+  <path d="M1455,241 V263" class="ar"/>
+  <path d="M1455,317 V340" class="ar"/>
+  <path d="M1455,394 V417" class="ar"/>
+  <path d="M1455,471 V522 H1468" class="ar"/>
+  <path d="M1670,522 H1685 V473" class="ar"/>
+  <path d="M1685,419 V396" class="ar"/>
+  <path d="M1685,342 V319" class="ar"/>
+  <path d="M1685,265 V243" class="ar"/>
+  <path d="M1540,445 H1598" class="ar-o"/>
+  <text x="1570" y="438" class="m c" fill="#c2410c">skip</text>
+  <path d="M1540,368 H1598" class="ar-o"/>
+  <text x="1570" y="361" class="m c" fill="#c2410c">skip</text>
+
+  <rect x="1370" y="578" width="400" height="82" rx="8" fill="#ffedd5" stroke="#ea580c" stroke-width="1.5"/>
+  <text x="1386" y="600" class="st">FiLM conditioning · 398.2M (51% of the model)</text>
+  <text x="1386" y="621" class="b">27,648 condition + 128-d step embedding = 27,776</text>
+  <text x="1386" y="641" class="b">→ a scale &amp; bias in each of the 12 ResBlocks</text>
+  <path d="M1570,578 V550" class="ar"/>
+
+  <text x="1370" y="694" class="st">Sampling (DDIM)</text>
+  <text x="1370" y="715" class="b">start from Gaussian noise, then 16 denoising steps</text>
+  <text x="1370" y="734" class="b">(t = 45, 42, …, 0 of a 50-step squared-cosine</text>
+  <text x="1370" y="753" class="b">schedule); the U-Net predicts the noise ε each step;</text>
+  <text x="1370" y="772" class="b">samples are clipped to [−1, 1] in normalised units</text>
+  <text x="1370" y="797" class="s">step embedding: sinusoidal 128 → 512 → 128 (Mish)</text>
+
+  <!-- F Output -->
+  <rect x="1840" y="195" width="170" height="260" rx="10" fill="#f9fafb" stroke="#6b7280" stroke-width="1.5"/>
+  <text x="1854" y="223" class="bt">Action chunk</text>
+  <text x="1854" y="246" class="b">16 steps × 20 numbers</text>
+  <text x="1854" y="265" class="b">un-normalised with the</text>
+  <text x="1854" y="284" class="b">stored scale &amp; offset</text>
+  <text x="1854" y="310" class="st">per arm:</text>
+  <text x="1854" y="329" class="b">position (3)</text>
+  <text x="1854" y="348" class="b">6-D rotation (6)</text>
+  <text x="1854" y="367" class="b">gripper (1)</text>
+  <text x="1854" y="393" class="b">the robot runs the</text>
+  <text x="1854" y="412" class="b">first 12, then the</text>
+  <text x="1854" y="431" class="b">net predicts again</text>
+
+  <!-- Flow arrows -->
+  <path d="M290,200 H668" class="ar"/>
+  <text x="480" y="192" class="s c">the 15 actions after each kept frame</text>
+  <path d="M290,300 H338" class="ar"/>
+  <path d="M620,355 H668" class="ar"/>
+  <path d="M810,260 V288" class="ar"/>
+  <path d="M950,355 H998" class="ar"/>
+  <path d="M1145,420 V538" class="ar"/>
+  <text x="1157" y="472" class="s">cross-attention</text>
+  <text x="1157" y="488" class="s">keys &amp; values</text>
+  <path d="M290,625 H338" class="ar"/>
+  <path d="M620,625 H668" class="ar"/>
+  <path d="M950,625 H998" class="ar"/>
+  <path d="M1145,730 V758" class="ar"/>
+  <path d="M810,675 V810 H998" class="ar"/>
+  <text x="822" y="802" class="s">live tokens</text>
+  <path d="M1290,810 H1322 V619 H1368" class="ar"/>
+  <path d="M1790,223 H1838" class="ar"/>
+  <text x="1815" y="214" class="s c">x₀</text>
+
+  <!-- Parameter budget -->
+  <text x="40" y="925" class="bt">Where the 781M parameters are</text>
+  <g clip-path="url(#barclip)">
+    <rect x="40" y="940" width="645.98" height="36" fill="#8b5cf6"/>
+    <rect x="685.98" y="940" width="17.78" height="36" fill="#3b82f6"/>
+    <rect x="703.76" y="940" width="142.32" height="36" fill="#10b981"/>
+    <rect x="846.08" y="940" width="153.50" height="36" fill="#fb923c"/>
+    <rect x="999.58" y="940" width="999.38" height="36" fill="#ea580c"/>
+    <rect x="1998.96" y="940" width="1.04" height="36" fill="#9ca3af"/>
+  </g>
+  <text x="363" y="955" class="bar1">Image encoders (3 × CLIP ViT-B/16)</text>
+  <text x="363" y="970" class="bar2">257.4M · 33.0%</text>
+  <text x="774.9" y="955" class="bar1">Decoder</text>
+  <text x="774.9" y="970" class="bar2">56.7M · 7.3%</text>
+  <text x="922.8" y="955" class="bar1">U-Net convs + step MLP</text>
+  <text x="922.8" y="970" class="bar2">61.2M · 7.8%</text>
+  <text x="1499.3" y="955" class="bar1">FiLM projections in the U-Net</text>
+  <text x="1499.3" y="970" class="bar2">398.2M · 51.0%</text>
+  <path d="M694.9,976 V992" stroke="#3b82f6" stroke-width="1.5"/>
+  <text x="690" y="1006" class="s">Prompt pooling · 7.1M · 0.9%</text>
+  <path d="M1999.5,976 V992" stroke="#6b7280" stroke-width="1.5"/>
+  <text x="2000" y="1006" class="s e">action &amp; pose projections, positions, sinks, normalisation · 0.4M · 0.05%</text>
+  <text x="40" y="1040" class="s">Half the model is FiLM: each of the U-Net's 12 ResBlocks has its own Linear(27,776 → 2 × channels) that turns the condition into a per-channel scale and bias.</text>
+
+  <text x="40" y="1090" class="m">Sources: vector_runtime/net.py in robotensor/vector-orchestrator @ 55ab67c · tensor header of rawberry12/attune-must-win @ c40c7c8 (753 tensors, 780,979,360 parameters, all float32) · attune.robotensor.ai/docs/vector/guide/the-model</text>
+</svg>
