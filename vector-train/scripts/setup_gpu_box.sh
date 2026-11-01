@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # The two Python environments on a Linux GPU box (run from the directory holding vector-train/):
-#   .venv-train  vector-runtime's pinned model stack (torch 2.8.0, CUDA 12.8 wheels: RTX 50xx too)
-#                plus vector-protocol and this package. It trains, and serves policies in duels.
+#   .venv-train  vector-runtime's pinned model stack (torch 2.8.0: CUDA 12.8 wheels, RTX 50xx too,
+#                or 12.6 ones when the driver stops short of 12.8; TORCH_INDEX overrides) plus
+#                vector-protocol and this package. It trains, and serves policies in duels.
 #   .venv-orch   the duel engine (`vector-orchestrator`), as its README sets it up.
 # The simulator is separate: RoboTwin-Vector's own install script and conda env.
 #   bash vector-train/scripts/setup_gpu_box.sh
@@ -10,9 +11,16 @@ PY=${PYTHON:-python3}
 [ -d vector-orchestrator ] || git clone https://github.com/robotensor/vector-orchestrator
 [ -d vector-train ] || { echo "copy vector-train/ here first" >&2; exit 2; }
 
+# The newest CUDA the driver runs, as nvidia-smi prints it ("CUDA Version: 12.6").
+driver_cuda=$(nvidia-smi | sed -n 's/.*CUDA Version: *\([0-9][0-9.]*\).*/\1/p' | head -n1)
+wheels=cu128
+if [ "$(printf '%s\n' 12.8 "$driver_cuda" | sort -V | head -n1)" != 12.8 ]; then wheels=cu126; fi
+TORCH_INDEX=${TORCH_INDEX:-https://download.pytorch.org/whl/$wheels}
+echo "driver CUDA $driver_cuda: torch from $TORCH_INDEX"
+
 "$PY" -m venv .venv-train
 .venv-train/bin/pip install -q --upgrade pip
-.venv-train/bin/pip install -q torch==2.8.0 torchvision==0.23.0 --index-url https://download.pytorch.org/whl/cu128
+.venv-train/bin/pip install -q torch==2.8.0 torchvision==0.23.0 --index-url "$TORCH_INDEX"
 .venv-train/bin/pip install -q -e "vector-orchestrator/packages/vector-runtime[model]" \
     -e vector-orchestrator/packages/vector-protocol -e vector-train
 .venv-train/bin/python -c "import torch; assert torch.cuda.is_available(); print('train env:', torch.__version__, torch.cuda.get_device_name(0))"
